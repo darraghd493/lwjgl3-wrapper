@@ -21,6 +21,13 @@ import static org.lwjgl.glfw.GLFW.glfwSetCursorPos;
  * @since 1.0.0
  */
 public class Mouse {
+    /**
+     * Unused <b>internal</b> variable.
+     * <p>
+     * Retained for compatibility.
+     */
+    public static final int EVENT_SIZE = 1 + 1 + 4 + 4 + 4 + 8;
+    
     private static final CircularEventQueue EVENT_QUEUE = new CircularEventQueue(256);
     private static final MouseMoveEvent[] MOUSE_MOVE_EVENTS = new MouseMoveEvent[EVENT_QUEUE.getMaxCapacity()];
     private static final MouseMoveEvent[] PREV_MOUSE_MOVE_EVENTS = new MouseMoveEvent[EVENT_QUEUE.getMaxCapacity()];
