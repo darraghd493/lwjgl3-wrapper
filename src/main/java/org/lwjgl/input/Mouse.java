@@ -23,6 +23,7 @@ import static org.lwjgl.glfw.GLFW.glfwSetCursorPos;
 public class Mouse {
     private static final CircularEventQueue EVENT_QUEUE = new CircularEventQueue(256);
     private static final MouseMoveEvent[] MOUSE_MOVE_EVENTS = new MouseMoveEvent[EVENT_QUEUE.getMaxCapacity()];
+    private static final MouseMoveEvent[] PREV_MOUSE_MOVE_EVENTS = new MouseMoveEvent[EVENT_QUEUE.getMaxCapacity()];
     private static final MouseButtonEvent[] MOUSE_BUTTON_EVENTS = new MouseButtonEvent[EVENT_QUEUE.getMaxCapacity()];
     private static final MouseScrollEvent[] MOUSE_SCROLL_EVENTS = new MouseScrollEvent[EVENT_QUEUE.getMaxCapacity()];
     private static final long[] MOUSE_EVENT_TIMINGS = new long[EVENT_QUEUE.getMaxCapacity()];
@@ -106,10 +107,14 @@ public class Mouse {
             dy = 0;
         }
 
-        // Enqueue event
+        // Enqueue events
+        PREV_MOUSE_MOVE_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseMoveEvent(prevX, prevY);
+        prevX = latestX;
+        prevY = latestY;
+
         MOUSE_MOVE_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseMoveEvent(x, y);
-        MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getWritePosition()] = null;
-        MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getWritePosition()] = null;
+        MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseButtonEvent(-1, false);
+        MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseScrollEvent(0, 0);
         MOUSE_EVENT_TIMINGS[EVENT_QUEUE.getWritePosition()] = Sys.getTime();
         EVENT_QUEUE.push();
     }
@@ -123,9 +128,13 @@ public class Mouse {
      * @apiNote Custom method.
      */
     public static void addButtonEvent(int button, boolean state) {
-        MOUSE_MOVE_EVENTS[EVENT_QUEUE.getWritePosition()] = null;
+        PREV_MOUSE_MOVE_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseMoveEvent(prevX, prevY);
+        prevX = latestX;
+        prevY = latestY;
+
+        MOUSE_MOVE_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseMoveEvent(latestX, latestY);
         MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseButtonEvent(button, state);
-        MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getWritePosition()] = null;
+        MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseScrollEvent(0, 0);
         MOUSE_EVENT_TIMINGS[EVENT_QUEUE.getWritePosition()] = Sys.getTime();
         EVENT_QUEUE.push();
     }
@@ -139,21 +148,23 @@ public class Mouse {
      * @apiNote Custom method.
      */
     public static void addScrollEvent(double x, double y) {
-        // Update delta values
+        int lastWheelX = dWheelX,
+                lastWheelY = dWheelY;
+
         dWheelX += (int) x;
         dWheelY += (int) y;
 
-        // Reset other event values
-        prevX = latestX;
-        prevY = latestY;
+        if (lastWheelX != dWheelX || lastWheelY != dWheelY) {
+            PREV_MOUSE_MOVE_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseMoveEvent(prevX, prevY);
+            prevX = latestX;
+            prevY = latestY;
 
-        // Enqueue event
-        MOUSE_MOVE_EVENTS[EVENT_QUEUE.getWritePosition()] = null;
-        MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getWritePosition()] = null;
-        MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseScrollEvent(x, y);
-
-        MOUSE_EVENT_TIMINGS[EVENT_QUEUE.getWritePosition()] = Sys.getTime();
-        EVENT_QUEUE.push();
+            MOUSE_MOVE_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseMoveEvent(latestX, latestY);
+            MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseButtonEvent(-1, false);
+            MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseScrollEvent(x, y);
+            MOUSE_EVENT_TIMINGS[EVENT_QUEUE.getWritePosition()] = Sys.getTime();
+            EVENT_QUEUE.push();
+        }
     }
 
     /**
@@ -268,8 +279,7 @@ public class Mouse {
      * @return The current event button.
      */
     public static int getEventButton() {
-        MouseButtonEvent event = MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getReadPosition()];
-        return event == null ? -1 : event.button();
+        return MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getReadPosition()].button();
     }
 
     /**
@@ -278,8 +288,7 @@ public class Mouse {
      * @return The current event button state.
      */
     public static boolean getEventButtonState() {
-        MouseButtonEvent event = MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getReadPosition()];
-        return event != null && event.state();
+        return MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getReadPosition()].state();
     }
 
     /**
@@ -299,8 +308,7 @@ public class Mouse {
      * @apiNote Custom method.
      */
     public static int getEventDWheelX() {
-        MouseScrollEvent event = MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getReadPosition()];
-        return event != null ? (int) event.x() : 0;
+        return MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getReadPosition()] != null ? (int) MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getReadPosition()].x() : 0;
     }
 
     /**
@@ -311,8 +319,7 @@ public class Mouse {
      * @apiNote Custom method.
      */
     public static int getEventDWheelY() {
-        MouseScrollEvent event = MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getReadPosition()];
-        return event != null ? (int) event.y() : 0;
+        return MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getReadPosition()] != null ? (int) MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getReadPosition()].y() : 0;
     }
 
     /**
@@ -321,14 +328,7 @@ public class Mouse {
      * @return The current event delta x position of the last two events.
      */
     public static int getEventDX() {
-        MouseMoveEvent event = MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()],
-                previousEvent = MOUSE_MOVE_EVENTS[EVENT_QUEUE.getLastReadPosition()];
-
-        if (previousEvent == null) {
-            return event == null ? 0 : (int) event.x();
-        }
-
-        return event == null ? 0 : (int) (event.x() - previousEvent.x());
+        return (int) (MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()].x() - PREV_MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()].x());
     }
 
     /**
@@ -337,14 +337,7 @@ public class Mouse {
      * @return The current event delta y position of the last two events.
      */
     public static int getEventDY() {
-        MouseMoveEvent event = MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()],
-                previousEvent = MOUSE_MOVE_EVENTS[EVENT_QUEUE.getLastReadPosition()];
-
-        if (previousEvent == null) {
-            return event == null ? 0 : (int) event.y();
-        }
-
-        return event == null ? 0 : (int) (event.y() - previousEvent.y());
+        return (int) (MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()].y() - PREV_MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()].y());
     }
 
     /**
@@ -362,7 +355,10 @@ public class Mouse {
      * @return The latest x position of the mouse.
      */
     public static int getEventX() {
-        return MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()] == null ? 0 : (int) MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()].x();
+        if (MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()] == null) {
+            return 0;
+        }
+        return (int) MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()].x();
     }
 
     /**
@@ -371,7 +367,10 @@ public class Mouse {
      * @return The latest y position of the mouse.
      */
     public static int getEventY() {
-        return MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()] == null ? 0 : (int) MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()].y();
+        if (MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()] == null) {
+            return 0;
+        }
+        return (int) MOUSE_MOVE_EVENTS[EVENT_QUEUE.getReadPosition()].y();
     }
 
     /**
@@ -459,8 +458,10 @@ public class Mouse {
      */
     public static void poll() {
         if (!grabbed && clipPosition) {
-            latestX = Math.min(Math.max(latestX, 0), Display.getWidth() - 1);
-            latestY = Math.min(Math.max(latestY, 0), Display.getHeight() - 1);
+            if (latestX < 0) latestX = 0;
+            if (latestY < 0) latestY = 0;
+            if (latestX > Display.getWidth() - 1) latestX = Display.getWidth() - 1;
+            if (latestY > Display.getHeight() - 1) latestY = Display.getHeight() - 1;
         }
 
         x = latestX;
