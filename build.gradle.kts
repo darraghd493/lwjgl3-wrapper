@@ -90,13 +90,13 @@ publishing {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
             groupId = "me.darragh"
-            artifactId = "event-bus"
+            artifactId = "lwjgl3-wrapper"
             version = project.version.toString()
 
             pom {
-                name.set("Event Bus")
-                description.set("A simple event bus for Java")
-                url.set("https://github.com/Fentanyl-Client/event-bus")
+                name.set("lwjgl3-wrapper")
+                description.set("An experimental lwjgl3 wrapper")
+                url.set("https://github.com/Fentanyl-Client/lwjgl3-wrapper")
                 properties.set(mapOf(
                     "java.version" to "17",
                     "project.build.sourceEncoding" to "UTF-8",
@@ -105,7 +105,7 @@ publishing {
                 licenses {
                     license {
                         name.set("MIT License")
-                        url.set("https://github.com/Fentanyl-Client/event-bus/blob/main/LICENSE")
+                        url.set("https://github.com/Fentanyl-Client/lwjgl3-wrapper/blob/main/LICENSE")
                     }
                 }
                 developers {
@@ -119,9 +119,9 @@ publishing {
                     url.set("https://fentanyl.dev")
                 }
                 scm {
-                    connection.set("scm:git:git://github.com/Fentanyl-Client/event-bus.git")
-                    developerConnection.set("scm:git:ssh://github.com/Fentanyl-Client/event-bus.git")
-                    url.set("https://github.com/Fentanyl-Client/event-bus")
+                    connection.set("scm:git:git://github.com/Fentanyl-Client/lwjgl3-wrapper.git")
+                    developerConnection.set("scm:git:ssh://github.com/Fentanyl-Client/lwjgl3-wrapper.git")
+                    url.set("https://github.com/Fentanyl-Client/lwjgl3-wrapper")
                 }
             }
 
@@ -136,7 +136,7 @@ publishing {
         mavenLocal()
         maven {
             name = "darraghsRepo"
-            url = uri("https://repo.darragh.website/snapshots")
+            url = uri("https://repo.darragh.website/releases")
             credentials {
                 username = System.getenv("REPO_TOKEN")
                 password = System.getenv("REPO_SECRET")
