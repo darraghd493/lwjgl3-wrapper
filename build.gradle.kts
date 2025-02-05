@@ -1,9 +1,6 @@
-import java.io.BufferedReader
-
 plugins {
     id("java")
     id("maven-publish")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 // Project properties:
@@ -19,10 +16,6 @@ java {
 // Dependencies:
 repositories {
     mavenCentral()
-}
-
-val shadowImpl: Configuration by configurations.creating {
-    configurations.implementation.get().extendsFrom(this)
 }
 
 dependencies {
@@ -72,16 +65,6 @@ tasks.register<Jar>("sourcesJar") {
 tasks.register<Jar>("javadocJar") {
     archiveClassifier.set("javadoc")
     from(tasks.javadoc)
-}
-
-tasks.shadowJar {
-    archiveClassifier.set("shadowed")
-    configurations = listOf(shadowImpl)
-    doLast {
-        configurations.forEach {
-            println("Copying dependencies into mod: ${it.files}")
-        }
-    }
 }
 
 // Publishing:
