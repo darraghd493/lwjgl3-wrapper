@@ -17,17 +17,17 @@ repositories {
 }
 
 dependencies {
-    implementation("me.darragh:event-bus:{version}")
+    implementation("me.darragh:lwjgl3-wrapper:{version}")
 }
 ```
 
-_This project is also available via. Jitpack. View more information [here](https://jitpack.io/#Fentanyl-Client/event-bus)._
+_This project is also available via. Jitpack. View more information [here](https://jitpack.io/#Fentanyl-Client/lwjgl3-wrapper)._
 
 ## Usage:
 
-1. Add LWJGL 3.3.4 to your project
+1. Add the matching LWJGL version to your project
 2. Add the `lwjgl3-wrapper` dependency to your project
-    - This must be overwriting classes from LWJGL 3.3.4
+    - This must be overwriting classes from LWJGL
 3. Update OpenGL/AL references, e.g., `GL11.glFog` -> `GL11.glFogfv`
     - In MCP919, this is pretty easy but takes about 5 - 10 minutes
     - Make sure to include paulscode sound library - I've posted updated classes for it [here](https://gist.github.com/darraghd493/a1b59d98ee790eea97d4a5fcbcca8332)
