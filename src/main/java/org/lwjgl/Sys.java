@@ -19,6 +19,8 @@ import static org.lwjgl.glfw.GLFW.glfwInit;
  * @since 1.0.0
  */
 public class Sys {
+    private static final double NANO_TIMER_RESOLUTION = 1000.0D * 1000.0D * 1000.0D;
+
     static {
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize glfw");
     }
@@ -52,7 +54,7 @@ public class Sys {
      * @return The current time in seconds.
      */
     public static long getTime() {
-        return (long) GLFW.glfwGetTime();
+        return GLFW.glfwGetTimerValue();
     }
 
     /**
@@ -63,7 +65,7 @@ public class Sys {
      * @apiNote Custom method.
      */
     public static long getNanoTime() {
-        return (long) GLFW.glfwGetTime() * 1000L * 1000L * 1000L;
+        return (long) (GLFW.glfwGetTimerValue() * NANO_TIMER_RESOLUTION / getTimerResolution());
     }
 
     /**
