@@ -122,7 +122,7 @@ public class Mouse {
         MOUSE_MOVE_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseMoveEvent(x, y);
         MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseButtonEvent(-1, false);
         MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseScrollEvent(0, 0);
-        MOUSE_EVENT_TIMINGS[EVENT_QUEUE.getWritePosition()] = Sys.getTime();
+        MOUSE_EVENT_TIMINGS[EVENT_QUEUE.getWritePosition()] = Sys.getNanoTime();
         EVENT_QUEUE.push();
     }
 
@@ -142,7 +142,7 @@ public class Mouse {
         MOUSE_MOVE_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseMoveEvent(latestX, latestY);
         MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseButtonEvent(button, state);
         MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseScrollEvent(0, 0);
-        MOUSE_EVENT_TIMINGS[EVENT_QUEUE.getWritePosition()] = Sys.getTime();
+        MOUSE_EVENT_TIMINGS[EVENT_QUEUE.getWritePosition()] = Sys.getNanoTime();
         EVENT_QUEUE.push();
     }
 
@@ -169,7 +169,7 @@ public class Mouse {
             MOUSE_MOVE_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseMoveEvent(latestX, latestY);
             MOUSE_BUTTON_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseButtonEvent(-1, false);
             MOUSE_SCROLL_EVENTS[EVENT_QUEUE.getWritePosition()] = new MouseScrollEvent(x, y);
-            MOUSE_EVENT_TIMINGS[EVENT_QUEUE.getWritePosition()] = Sys.getTime();
+            MOUSE_EVENT_TIMINGS[EVENT_QUEUE.getWritePosition()] = Sys.getNanoTime();
             EVENT_QUEUE.push();
         }
     }

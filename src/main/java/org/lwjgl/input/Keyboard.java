@@ -204,7 +204,7 @@ public class Keyboard {
         } catch (Exception ignored) {}
 
         KEY_COUNT = counter;
-        EVENT_QUEUE.add(new KeyEvent(0, '\0', KeyState.RELEASE, Sys.getTime()));
+        EVENT_QUEUE.add(new KeyEvent(0, '\0', KeyState.RELEASE, Sys.getNanoTime()));
     }
 
     /**
@@ -230,7 +230,7 @@ public class Keyboard {
             state = KeyState.REPEAT;
         }
 
-        EVENT_QUEUE.add(new KeyEvent(KeyCodeUtil.toLwjgl(key), keyChar, state, Sys.getTime()));
+        EVENT_QUEUE.add(new KeyEvent(KeyCodeUtil.toLwjgl(key), keyChar, state, Sys.getNanoTime()));
     }
 
     /**
@@ -257,7 +257,7 @@ public class Keyboard {
      * @apiNote Custom method.
      */
     public static void addCharEvent(int key, char keyChar) {
-        EVENT_QUEUE.add(new KeyEvent(KEY_NONE, keyChar, KeyState.PRESS, Sys.getTime()));
+        EVENT_QUEUE.add(new KeyEvent(KEY_NONE, keyChar, KeyState.PRESS, Sys.getNanoTime()));
     }
 
     /**

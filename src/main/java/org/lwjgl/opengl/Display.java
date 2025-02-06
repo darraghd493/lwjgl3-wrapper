@@ -100,6 +100,8 @@ public class Display {
     @Nullable
     private static KeyEvent ingredientKeyEvent;
 
+    private static boolean ignoreNextMouseMove;
+
     public Display() {
         throw new UnsupportedOperationException("This class cannot be instantiated. Please use Display.create().");
     }
@@ -162,7 +164,7 @@ public class Display {
                         Keyboard.addKeyEvent(window, key, scancode, action, mods, (char) (key & 0x1F));
                         cancelNextChar = true; // Cancel char event from Ctrl key event since it is handled here
                     } else if (action > 0) { // Delay press and repeat key event to actual char input; there is always a following char
-                        ingredientKeyEvent = new KeyEvent(KeyCodeUtil.toLwjgl(key), '\0', action > 1 ? KeyState.REPEAT : KeyState.PRESS, Sys.getTime());
+                        ingredientKeyEvent = new KeyEvent(KeyCodeUtil.toLwjgl(key), '\0', action > 1 ? KeyState.REPEAT : KeyState.PRESS, Sys.getNanoTime());
                     } else { // Release event
                         if (ingredientKeyEvent != null && ingredientKeyEvent.key() == KeyCodeUtil.toLwjgl(key)) {
                             ingredientKeyEvent.outOfOrder(true);
@@ -732,6 +734,8 @@ public class Display {
         } else {
             glfwSetWindowMonitor(Window.handle, NULL, savedDisplayX, savedDisplayY, savedDisplayWidth, savedDisplayHeight, 0);
         }
+
+        ignoreNextMouseMove = true;
     }
 
     /**

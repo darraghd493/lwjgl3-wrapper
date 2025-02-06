@@ -47,13 +47,23 @@ public class Sys {
     }
 
     /**
-     * Returns the current value of the hi-resolution timer in milliseconds.
+     * Returns the current time in seconds.
      *
-     * @return The current time in milliseconds.
+     * @return The current time in seconds.
      */
-    // TODO: Verify if accurate
     public static long getTime() {
-        return GLFW.glfwGetTimerValue() & 0x7FFFFFFFFFFFFFFFL;
+        return (long) GLFW.glfwGetTime();
+    }
+
+    /**
+     * Returns the current time in nanoseconds.
+     *
+     * @return The current time in nanoseconds.
+     *
+     * @apiNote Custom method.
+     */
+    public static long getNanoTime() {
+        return (long) GLFW.glfwGetTime() * 1000L * 1000L * 1000L;
     }
 
     /**
