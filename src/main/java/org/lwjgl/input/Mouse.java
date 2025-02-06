@@ -2,9 +2,9 @@ package org.lwjgl.input;
 
 import lombok.Getter;
 import me.darragh.lwjgl.event.CircularEventQueue;
-import me.darragh.lwjgl.mouse.MouseButtonEvent;
-import me.darragh.lwjgl.mouse.MouseMoveEvent;
-import me.darragh.lwjgl.mouse.MouseScrollEvent;
+import me.darragh.lwjgl.opengl.input.mouse.MouseButtonEvent;
+import me.darragh.lwjgl.opengl.input.mouse.MouseMoveEvent;
+import me.darragh.lwjgl.opengl.input.mouse.MouseScrollEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.LWJGLUtil;
 import org.lwjgl.Sys;

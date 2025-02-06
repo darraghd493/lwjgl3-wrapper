@@ -1,4 +1,4 @@
-package me.darragh.lwjgl.keyboard;
+package me.darragh.lwjgl.opengl.input.keyboard;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

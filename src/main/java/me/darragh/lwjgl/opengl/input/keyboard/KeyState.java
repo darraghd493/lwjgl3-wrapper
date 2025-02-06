@@ -1,4 +1,4 @@
-package me.darragh.lwjgl.keyboard;
+package me.darragh.lwjgl.opengl.input.keyboard;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

@@ -1,9 +1,8 @@
-package me.darragh.lwjgl.keyboard;
+package me.darragh.lwjgl.opengl.input.keyboard;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.experimental.Accessors;
-import org.lwjgl.input.Keyboard;
 
 /**
  * Represents a key event.

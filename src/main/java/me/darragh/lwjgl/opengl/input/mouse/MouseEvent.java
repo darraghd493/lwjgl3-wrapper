@@ -1,4 +1,4 @@
-package me.darragh.lwjgl.mouse;
+package me.darragh.lwjgl.opengl.input.mouse;
 
 /**
  * Represents a generic mouse event.

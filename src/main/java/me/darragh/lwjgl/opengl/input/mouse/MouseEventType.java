@@ -1,4 +1,4 @@
-package me.darragh.lwjgl.mouse;
+package me.darragh.lwjgl.opengl.input.mouse;
 
 /**
  * An enum representing the type of mouse event.

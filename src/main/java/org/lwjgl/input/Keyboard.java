@@ -1,9 +1,9 @@
 package org.lwjgl.input;
 
-import me.darragh.lwjgl.KeyCodeUtil;
-import me.darragh.lwjgl.keyboard.KeyEvent;
-import me.darragh.lwjgl.keyboard.KeyCode;
-import me.darragh.lwjgl.keyboard.KeyState;
+import me.darragh.lwjgl.opengl.input.keyboard.KeyCodeUtil;
+import me.darragh.lwjgl.opengl.input.keyboard.KeyEvent;
+import me.darragh.lwjgl.opengl.input.keyboard.KeyCode;
+import me.darragh.lwjgl.opengl.input.keyboard.KeyState;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.LWJGLUtil;
 import org.lwjgl.Sys;

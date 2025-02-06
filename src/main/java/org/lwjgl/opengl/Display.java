@@ -1,9 +1,9 @@
 package org.lwjgl.opengl;
 
 import lombok.Getter;
-import me.darragh.lwjgl.KeyCodeUtil;
-import me.darragh.lwjgl.keyboard.KeyEvent;
-import me.darragh.lwjgl.keyboard.KeyState;
+import me.darragh.lwjgl.opengl.input.keyboard.KeyCodeUtil;
+import me.darragh.lwjgl.opengl.input.keyboard.KeyEvent;
+import me.darragh.lwjgl.opengl.input.keyboard.KeyState;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLUtil;

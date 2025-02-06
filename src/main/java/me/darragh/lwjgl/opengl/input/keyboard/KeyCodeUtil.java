@@ -1,4 +1,4 @@
-package me.darragh.lwjgl;
+package me.darragh.lwjgl.opengl.input.keyboard;
 
 import lombok.experimental.UtilityClass;
 import org.lwjgl.glfw.GLFW;
