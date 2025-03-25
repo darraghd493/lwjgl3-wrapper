@@ -79,7 +79,7 @@ publishing {
             pom {
                 name.set("lwjgl3-wrapper")
                 description.set("An experimental lwjgl3 wrapper")
-                url.set("https://github.com/Fentanyl-Client/lwjgl3-wrapper")
+                url.set("https://github.com/darraghd493/lwjgl3-wrapper")
                 properties.set(mapOf(
                     "java.version" to "17",
                     "project.build.sourceEncoding" to "UTF-8",
@@ -88,7 +88,7 @@ publishing {
                 licenses {
                     license {
                         name.set("MIT License")
-                        url.set("https://github.com/Fentanyl-Client/lwjgl3-wrapper/blob/main/LICENSE")
+                        url.set("https://github.com/darraghd493/lwjgl3-wrapper/blob/main/LICENSE")
                     }
                 }
                 developers {
@@ -102,9 +102,9 @@ publishing {
                     url.set("https://fentanyl.dev")
                 }
                 scm {
-                    connection.set("scm:git:git://github.com/Fentanyl-Client/lwjgl3-wrapper.git")
-                    developerConnection.set("scm:git:ssh://github.com/Fentanyl-Client/lwjgl3-wrapper.git")
-                    url.set("https://github.com/Fentanyl-Client/lwjgl3-wrapper")
+                    connection.set("scm:git:git://github.com/darraghd493/lwjgl3-wrapper.git")
+                    developerConnection.set("scm:git:ssh://github.com/darraghd493/lwjgl3-wrapper.git")
+                    url.set("https://github.com/darraghd493/lwjgl3-wrapper")
                 }
             }
 
