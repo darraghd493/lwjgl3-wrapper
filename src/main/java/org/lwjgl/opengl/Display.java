@@ -27,7 +27,6 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * @author darraghd493
  * @since 1.0.0
  */
-// TODO: Fix crashing
 public class Display {
     /**
      * -- GETTER --
@@ -58,10 +57,12 @@ public class Display {
      * Returns the drawable instance.
      */
     @Getter
-    private static Drawable drawable;
-
     @Nullable
-    private static ByteBuffer[] icons;
+    private static Drawable drawable = null;
+
+    @SuppressWarnings("DataFlowIssue")
+    @Nullable
+    private static ByteBuffer[] icons = null;
 
     // Window data
     /**
@@ -100,8 +101,6 @@ public class Display {
     @Nullable
     private static KeyEvent ingredientKeyEvent;
 
-    private static boolean ignoreNextMouseMove;
-
     public Display() {
         throw new UnsupportedOperationException("This class cannot be instantiated. Please use Display.create().");
     }
@@ -123,15 +122,19 @@ public class Display {
     /**
      * Creates the display window, initialises the OpenGL context and prepares all resources.
      */
+    // TODO: Fix late resize issue; for some reason it doesn't update on Hyprland?
     public static void create() {
         if (Window.handle != NULL || displayCreated) {
             throw new IllegalStateException("Display already created.");
         }
 
         // Update display mode
-
         long primaryMonitor = glfwGetPrimaryMonitor();
         GLFWVidMode vidMode = glfwGetVideoMode(primaryMonitor);
+
+        if (vidMode == null) {
+            throw new IllegalStateException("Primary monitor video mode is null.");
+        }
 
         int monitorWidth = vidMode.width(),
                 monitorHeight = vidMode.height(),
@@ -152,6 +155,11 @@ public class Display {
         Window.handle = glfwCreateWindow(displayMode.getWidth(), displayMode.getHeight(), title, NULL, NULL);
         if (Window.handle == NULL) {
             throw new IllegalStateException("Failed to create Display window");
+        }
+
+        // Patch for raw mouse input
+        if (glfwRawMouseMotionSupported()) {
+            glfwSetInputMode(Window.handle, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         }
 
         // Set callbacks
@@ -281,60 +289,7 @@ public class Display {
         Window.mouseButtonCallback = new GLFWMouseButtonCallback() {
             @Override
             public void invoke(long window, int button, int action, int mods) {
-                Mouse.addButtonEvent(button, action == GLFW.GLFW_PRESS ? true : false);
-            }
-        };
-
-        Window.scrollCallback = new GLFWScrollCallback() {
-            @Override
-            public void invoke(long window, double x, double y) {
-                Mouse.addScrollEvent(x, y);
-            }
-        };
-
-        Window.windowFocusCallback = new GLFWWindowFocusCallback() {
-            @Override
-            public void invoke(long window, boolean focused) {
-                displayFocused = focused;
-            }
-        };
-
-        Window.windowIconifyCallback = new GLFWWindowIconifyCallback() {
-            @Override
-            public void invoke(long window, boolean iconified) {
-                displayVisible = !iconified;
-            }
-        };
-
-        Window.windowSizeCallback = new GLFWWindowSizeCallback() {
-            @Override
-            public void invoke(long window, int width, int height) {
-                latestResized = true;
-                latestWidth = width;
-                latestHeight = height;
-            }
-        };
-
-        Window.windowPosCallback = new GLFWWindowPosCallback() {
-            @Override
-            public void invoke(long window, int x, int y) {
-                displayX = x;
-                displayY = y;
-            }
-        };
-
-        Window.windowRefreshCallback = new GLFWWindowRefreshCallback() {
-            @Override
-            public void invoke(long window) {
-                displayDirty = true;
-            }
-        };
-
-        Window.framebufferSizeCallback = new GLFWFramebufferSizeCallback() {
-            @Override
-            public void invoke(long window, int width, int height) {
-                displayFramebufferWidth = width;
-                displayFramebufferHeight = height;
+                Mouse.addButtonEvent(button, action == GLFW_PRESS);
             }
         };
 
@@ -347,7 +302,7 @@ public class Display {
         int[] fbw = new int[1],
                 fbh = new int[1];
 
-        GLFW.glfwGetFramebufferSize(Window.handle, fbw, fbh);
+        glfwGetFramebufferSize(Window.handle, fbw, fbh);
         displayFramebufferWidth = fbw[0];
         displayFramebufferHeight = fbh[0];
 
@@ -362,20 +317,20 @@ public class Display {
         displayCreated = true;
 
         // Update window
-        if (icons != null) {
-            setIcon(icons);
-            icons = null;
-        }
+        setIcon(icons);
 
         if (fullscreen) {
             setFullscreen(true);
         }
 
-        int[] x = new int[1], y = new int[1];
-        GLFW.glfwGetWindowSize(Window.handle, x, y);
-        GLFW.glfwGetFramebufferSize(Window.handle, x, y);
-        Window.windowSizeCallback.invoke(Window.handle, x[0], y[0]);
-        Window.framebufferSizeCallback.invoke(Window.handle, x[0], y[0]);
+        // Trigger early callbacks to get a more accurate initial state
+        int[] ww = new int[1],
+                wh = new int[1];
+
+        glfwGetWindowSize(Window.handle, ww, wh);
+        glfwGetFramebufferSize(Window.handle, ww, wh);
+        Window.windowSizeCallback.invoke(Window.handle, ww[0], wh[0]);
+        Window.framebufferSizeCallback.invoke(Window.handle, ww[0], wh[0]);
     }
 
     /**
@@ -462,12 +417,28 @@ public class Display {
      * Destroys the display window and releases all resources.
      */
     public static void destroy() {
+        destroy(true);
+    }
+
+    /**
+     * Destroys the display window and releases all resources.
+     *
+     * @apiNote Custom method.
+     */
+    // TODO: Debug; something is wrong on Linux? I've cleaned this up to at least close instantly but it still sigsevs
+    public static void destroy(boolean terminate) {
         if (!isCreated()) {
             throw new IllegalStateException("Display not created.");
         }
 
         Window.releaseCallbacks();
         glfwDestroyWindow(Window.handle);
+        if (terminate) {
+            terminate();
+        }
+
+        // Reset the Display state
+        Window.handle = NULL;
         displayCreated = false;
     }
 
@@ -488,7 +459,7 @@ public class Display {
     public static DisplayMode[] getAvailableDisplayModes() {
         IntBuffer count = BufferUtils.createIntBuffer(1);
 
-        GLFWVidMode.Buffer modes = GLFW.glfwGetVideoModes(glfwGetPrimaryMonitor());
+        GLFWVidMode.Buffer modes = glfwGetVideoModes(glfwGetPrimaryMonitor());
         Objects.requireNonNull(modes, "Video modes are null.");
 
         DisplayMode[] displayModes = new DisplayMode[count.get(0)];
@@ -646,6 +617,11 @@ public class Display {
             displayResized = true;
             displayWidth = latestWidth;
             displayHeight = latestHeight;
+
+            int[] fbw = new int[1], fbh = new int[1];
+            glfwGetFramebufferSize(Window.handle, fbw, fbh);
+            displayFramebufferWidth = fbw[0];
+            displayFramebufferHeight = fbh[0];
         } else {
             displayResized = false;
         }
@@ -733,9 +709,9 @@ public class Display {
             glfwSetWindowMonitor(Window.handle, primaryMonitor, 0, 0, vidMode.width(), vidMode.height(), vidMode.refreshRate());
         } else {
             glfwSetWindowMonitor(Window.handle, NULL, savedDisplayX, savedDisplayY, savedDisplayWidth, savedDisplayHeight, 0);
+            //noinspection DataFlowIssue
+            Window.windowSizeCallback.invoke(Window.handle, savedDisplayWidth, savedDisplayHeight);
         }
-
-        ignoreNextMouseMove = true;
     }
 
     /**
@@ -743,7 +719,14 @@ public class Display {
      *
      * @param icons The new display icon.
      */
-    public static void setIcon(ByteBuffer[] icons) {
+    // TODO: Validate platform icon support
+    public static void setIcon(@Nullable ByteBuffer[] icons) {
+        //noinspection ConstantValue
+        if (icons == null || icons.length == 0) {
+            LWJGLUtil.log("Display.setIcon() called with null or empty icon array. No icon will be set.");
+            return;
+        }
+
         if (!isCreated()) {
             Display.icons = icons;
             return;
@@ -752,23 +735,28 @@ public class Display {
         GLFWImage.Buffer glfwImages = GLFWImage.calloc(icons.length);
         ByteBuffer[] nativeBuffers = new ByteBuffer[icons.length];
         for (int icon = 0; icon < icons.length; icon++) {
-            nativeBuffers[icon] = BufferUtils.createByteBuffer(icons[icon].capacity());
-            nativeBuffers[icon].put(icons[icon]);
+            ByteBuffer image = icons[icon];
+            if (image == null) {
+                throw new IllegalArgumentException("Icon at index " + icon + " is null.");
+            }
+            nativeBuffers[icon] = BufferUtils.createByteBuffer(image.capacity());
+            nativeBuffers[icon].put(image);
             nativeBuffers[icon].flip();
             int dimension = (int) Math.sqrt(nativeBuffers[icon].limit() / 4D);
             if (dimension * dimension * 4 != nativeBuffers[icon].limit()) {
                 throw new IllegalStateException();
             }
+            //noinspection resource
             glfwImages.put(icon, GLFWImage.create().set(dimension, dimension, nativeBuffers[icon]));
         }
-        GLFW.glfwSetWindowIcon(getWindow(), glfwImages);
+        glfwSetWindowIcon(getWindow(), glfwImages);
         glfwImages.free();
     }
 
     /**
      * Dummy method.
      *
-     * @implNote This method is not implemented. Please use {@link org.lwjgl.opengl.GL11C#glClearColor(float, float, float, float)}.
+     * @implNote This method is not implemented. Please use {@link GL11C#glClearColor(float, float, float, float)}.
      */
     public static void setInitialBackground(float red, float green, float blue) {
         LWJGLUtil.log("Display.setInitialBackground() is not implemented. Please use GL11.glClearColor().");
@@ -931,7 +919,7 @@ public class Display {
      * @implNote Does not take effect prior to display creation.
      */
     public static void setSize(int width, int height) {
-        if (!isCreated() || fullscreen || !isCreated()) {
+        if (!isCreated() || fullscreen) {
             return;
         }
 
@@ -986,47 +974,69 @@ public class Display {
         }
     }
 
+    /**
+     * Calls glfwTerminate
+     *
+     * @apiNote Custom method.
+     */
+    public static void terminate() {
+        glfwTerminate();
+    }
+
     private static class Window {
         static long handle;
 
-        static GLFWKeyCallback keyCallback;
-        static GLFWCharCallback charCallback;
-        static GLFWCursorPosCallback cursorPosCallback;
-        static GLFWMouseButtonCallback mouseButtonCallback;
-        static GLFWScrollCallback scrollCallback;
-        static GLFWWindowFocusCallback windowFocusCallback;
-        static GLFWWindowIconifyCallback windowIconifyCallback;
-        static GLFWWindowSizeCallback windowSizeCallback;
-        static GLFWWindowPosCallback windowPosCallback;
-        static GLFWWindowRefreshCallback windowRefreshCallback;
-        static GLFWFramebufferSizeCallback framebufferSizeCallback;
+        @Nullable static GLFWKeyCallback keyCallback = null;
+        @Nullable static GLFWCharCallback charCallback = null;
+        @Nullable static GLFWCursorPosCallback cursorPosCallback = null;
+        @Nullable static GLFWMouseButtonCallback mouseButtonCallback = null;
+        @Nullable static GLFWScrollCallback scrollCallback = null;
+        @Nullable static GLFWWindowFocusCallback windowFocusCallback = null;
+        @Nullable static GLFWWindowIconifyCallback windowIconifyCallback = null;
+        @Nullable static GLFWWindowSizeCallback windowSizeCallback = null;
+        @Nullable static GLFWWindowPosCallback windowPosCallback = null;
+        @Nullable static GLFWWindowRefreshCallback windowRefreshCallback = null;
+        @Nullable static GLFWFramebufferSizeCallback framebufferSizeCallback = null;
+        @Nullable static GLFWErrorCallback errorCallback = GLFWErrorCallback.createPrint(System.err); // Kept open; we want to see the errors
 
         public static void setCallbacks() {
-            GLFW.glfwSetKeyCallback(handle, keyCallback);
-            GLFW.glfwSetCharCallback(handle, charCallback);
-            GLFW.glfwSetCursorPosCallback(handle, cursorPosCallback);
-            GLFW.glfwSetMouseButtonCallback(handle, mouseButtonCallback);
-            GLFW.glfwSetScrollCallback(handle, scrollCallback);
-            GLFW.glfwSetWindowFocusCallback(handle, windowFocusCallback);
-            GLFW.glfwSetWindowIconifyCallback(handle, windowIconifyCallback);
-            GLFW.glfwSetWindowSizeCallback(handle, windowSizeCallback);
-            GLFW.glfwSetWindowPosCallback(handle, windowPosCallback);
-            GLFW.glfwSetWindowRefreshCallback(handle, windowRefreshCallback);
-            GLFW.glfwSetFramebufferSizeCallback(handle, framebufferSizeCallback);
+            glfwSetKeyCallback(handle, keyCallback);
+            glfwSetCharCallback(handle, charCallback);
+            glfwSetCursorPosCallback(handle, cursorPosCallback);
+            glfwSetMouseButtonCallback(handle, mouseButtonCallback);
+            glfwSetScrollCallback(handle, scrollCallback);
+            glfwSetWindowFocusCallback(handle, windowFocusCallback);
+            glfwSetWindowIconifyCallback(handle, windowIconifyCallback);
+            glfwSetWindowSizeCallback(handle, windowSizeCallback);
+            glfwSetWindowPosCallback(handle, windowPosCallback);
+            glfwSetWindowRefreshCallback(handle, windowRefreshCallback);
+            glfwSetFramebufferSizeCallback(handle, framebufferSizeCallback);
+            glfwSetErrorCallback(errorCallback);
         }
 
-        public static void releaseCallbacks() {
-            keyCallback.free();
-            charCallback.free();
-            cursorPosCallback.free();
-            mouseButtonCallback.free();
-            scrollCallback.free();
-            windowFocusCallback.free();
-            windowIconifyCallback.free();
-            windowSizeCallback.free();
-            windowPosCallback.free();
-            windowRefreshCallback.free();
-            framebufferSizeCallback.free();
+        @SuppressWarnings("resource")
+        public static void releaseCallbacks() { // TODO: Cleanup - repeated codeGLFW.glfwSetKeyCallback(handle, keyCallback);
+            glfwSetCharCallback(handle, null);
+            glfwSetCursorPosCallback(handle, null);
+            glfwSetMouseButtonCallback(handle, null);
+            glfwSetScrollCallback(handle, null);
+            glfwSetWindowFocusCallback(handle, null);
+            glfwSetWindowIconifyCallback(handle, null);
+            glfwSetWindowSizeCallback(handle, null);
+            glfwSetWindowPosCallback(handle, null);
+            glfwSetWindowRefreshCallback(handle, null);
+            glfwSetFramebufferSizeCallback(handle, null);
+            if (keyCallback != null) keyCallback.free();
+            if (charCallback != null) charCallback.free();
+            if (cursorPosCallback != null) cursorPosCallback.free();
+            if (mouseButtonCallback != null) mouseButtonCallback.free();
+            if (scrollCallback != null) scrollCallback.free();
+            if (windowFocusCallback != null) windowFocusCallback.free();
+            if (windowIconifyCallback != null) windowIconifyCallback.free();
+            if (windowSizeCallback != null) windowSizeCallback.free();
+            if (windowPosCallback != null) windowPosCallback.free();
+            if (windowRefreshCallback != null) windowRefreshCallback.free();
+            if (framebufferSizeCallback != null) framebufferSizeCallback.free();
         }
     }
 

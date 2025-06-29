@@ -1,5 +1,6 @@
 package org.lwjgl;
 
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.system.Platform;
@@ -24,6 +25,7 @@ public class Sys {
     static {
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize glfw");
     }
+
     /**
      * Summons a simple alert dialog.
      *
@@ -44,7 +46,7 @@ public class Sys {
      *
      * @return The contents of the clipboard.
      */
-    public static String getClipboard() {
+    public static @Nullable String getClipboard() {
         return GLFW.glfwGetClipboardString(Display.getWindow());
     }
 
@@ -106,12 +108,14 @@ public class Sys {
      * Opens a URL in the default browser.
      *
      * @param url The URL to open.
+     *
+     * @throws RuntimeException If the URL cannot be opened.
      */
     public static void openURL(String url) {
         try {
             Desktop.getDesktop().browse(new URI(url));
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to open URL", e);
         }
     }
 }
