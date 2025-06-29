@@ -1,12 +1,14 @@
 package org.lwjgl.opengl;
 
 import lombok.Getter;
+import me.darragh.lwjgl.Config;
 import me.darragh.lwjgl.opengl.input.keyboard.KeyCodeUtil;
 import me.darragh.lwjgl.opengl.input.keyboard.KeyEvent;
 import me.darragh.lwjgl.opengl.input.keyboard.KeyState;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLUtil;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.Sys;
 import org.lwjgl.glfw.*;
 import org.lwjgl.input.Keyboard;
@@ -14,9 +16,9 @@ import org.lwjgl.input.Mouse;
 
 import java.awt.*;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.Objects;
 
+import static me.darragh.lwjgl.Config.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL43.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -35,14 +37,16 @@ public class Display {
     @Getter
     private static String title = "LWJGL Display";
 
-    private static int x, y;
-
     private static int width = 854,
             height = 480;
 
-    private static int framebufferWidth = width,
-            framebufferHeight = height;
-
+    /**
+     * -- GETTER --
+     * Returns whether the display window is in fullscreen mode.
+     *
+     * @apiNote Custom method.
+     */
+    @Getter
     private static boolean resizable = true;
 
     /**
@@ -88,12 +92,12 @@ public class Display {
     private static int savedDisplayX, savedDisplayY,
             savedDisplayWidth, savedDisplayHeight;
 
+    // TODO: Remove? Only set; internal tracking
     private static int displayFramebufferWidth,
             displayFramebufferHeight;
 
     private static boolean latestResized;
-    private static int latestX, latestY,
-            latestWidth, latestHeight;
+    private static int latestWidth, latestHeight;
 
     // Callback data
     private static boolean cancelNextChar;
@@ -130,11 +134,7 @@ public class Display {
 
         // Update display mode
         long primaryMonitor = glfwGetPrimaryMonitor();
-        GLFWVidMode vidMode = glfwGetVideoMode(primaryMonitor);
-
-        if (vidMode == null) {
-            throw new IllegalStateException("Primary monitor video mode is null.");
-        }
+        GLFWVidMode vidMode = Objects.requireNonNull(glfwGetVideoMode(primaryMonitor), "Primary monitor video mode is null.");
 
         int monitorWidth = vidMode.width(),
                 monitorHeight = vidMode.height(),
@@ -145,11 +145,31 @@ public class Display {
 
         // Prepare window hints
         glfwDefaultWindowHints();
+
+        if (GL_CONTEXT_BACKWARD_COMPATIBLE) {
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+        }
+
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-        glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE); // Request a non-hidpi framebuffer (Retina display)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, GL_VERSION_MAJOR);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, GL_VERSION_MINOR);
+
+        // -> OpenGL context
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_bool(GL_CONTEXT_DEBUG));
+        glfwWindowHint(GLFW_CONTEXT_NO_ERROR, GLFW_bool(GL_CONTEXT_NO_ERROR));
+        glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_bool(GL_CONTEXT_SRGB));
+        glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_bool(GL_DOUBLE_BUFFER));
+
+        // -> Cocoa compositor
+        glfwWindowHintString(GLFW_COCOA_FRAME_NAME, Config.COCOA_FRAME_NAME);
+        glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_bool(COCOA_RETINA_FRAME_BUFFER)); // Request a non-hidpi framebuffer (Retina display)
+
+        // -> X11 compositor
+        glfwWindowHintString(GLFW_X11_CLASS_NAME, Config.X11_CLASS_NAME);
+
+        // -> Wayland compositor
+        glfwWindowHintString(GLFW_WAYLAND_APP_ID, Config.WAYLAND_APP_ID);
 
         // Create window
         Window.handle = glfwCreateWindow(displayMode.getWidth(), displayMode.getHeight(), title, NULL, NULL);
@@ -456,23 +476,24 @@ public class Display {
      *
      * @return All available display adapters.
      */
-    public static DisplayMode[] getAvailableDisplayModes() {
-        IntBuffer count = BufferUtils.createIntBuffer(1);
-
+    public static DisplayMode[] getAvailableDisplayModes() { // TODO: Consider other monitors?
         GLFWVidMode.Buffer modes = glfwGetVideoModes(glfwGetPrimaryMonitor());
-        Objects.requireNonNull(modes, "Video modes are null.");
+        if (modes == null) {
+            LWJGLUtil.log("No video modes found.");
+            return new DisplayMode[] {
+                    desktopDisplayMode
+            };
+        }
 
-        DisplayMode[] displayModes = new DisplayMode[count.get(0)];
+        DisplayMode[] displayModes = new DisplayMode[modes.remaining()];
+        for (int i = 0; i < modes.limit(); i++) {
+            GLFWVidMode mode = modes.get(i);
+            int width = mode.width(),
+                    height = mode.height(),
+                    bpp = mode.redBits() + mode.greenBits() + mode.blueBits(),
+                    refreshRate = mode.refreshRate();
 
-        for (int i = 0; i < count.get(0); i++) {
-            modes.position(i * GLFWVidMode.SIZEOF);
-
-            int modeWidth = modes.width(),
-                    modeHeight = modes.height(),
-                    modeBitsPerPixel = modes.redBits() + modes.greenBits() + modes.blueBits(),
-                    modeRefreshRate = modes.refreshRate();
-
-            displayModes[i] = new DisplayMode(modeWidth, modeHeight, modeBitsPerPixel, modeRefreshRate);
+            displayModes[i] = new DisplayMode(width, height, bpp, refreshRate);
         }
 
         return displayModes;
@@ -686,32 +707,28 @@ public class Display {
             return;
         }
 
-        if (fullscreen && !Display.fullscreen) {
-            int[] x = new int[1],
-                    y = new int[1],
-                    w = new int[1],
-                    h = new int[1];
-
-            glfwGetWindowPos(Window.handle, x, y);
-            glfwGetWindowSize(Window.handle, w, h);
-
-            savedDisplayX = x[0];
-            savedDisplayY = y[0];
-            savedDisplayWidth = w[0];
-            savedDisplayHeight = h[0];
-        }
-
-        Display.fullscreen = fullscreen;
-
         if (fullscreen) {
-            long primaryMonitor = glfwGetPrimaryMonitor();
-            GLFWVidMode vidMode = Objects.requireNonNull(glfwGetVideoMode(primaryMonitor), "Primary monitor video mode is null.");
-            glfwSetWindowMonitor(Window.handle, primaryMonitor, 0, 0, vidMode.width(), vidMode.height(), vidMode.refreshRate());
+            // Store the current display state before switching to fullscreen
+            if (!Display.fullscreen) {
+                savedDisplayX = displayX;
+                savedDisplayY = displayY;
+                savedDisplayWidth = displayWidth;
+                savedDisplayHeight = displayHeight;
+            }
+
+            if (GL_FULLSCREEN_BORDERLESS) {
+                _setFullscreenBorderless();
+            } else {
+                _setFullscreenExclusive();
+            }
         } else {
             glfwSetWindowMonitor(Window.handle, NULL, savedDisplayX, savedDisplayY, savedDisplayWidth, savedDisplayHeight, 0);
             //noinspection DataFlowIssue
             Window.windowSizeCallback.invoke(Window.handle, savedDisplayWidth, savedDisplayHeight);
+            glfwSetWindowAttrib(Window.handle, GLFW_DECORATED, GLFW_TRUE); // Ensure the window is decorated
         }
+
+        Display.fullscreen = fullscreen;
     }
 
     /**
@@ -774,9 +791,6 @@ public class Display {
         if (fullscreen || !isCreated()) {
             return;
         }
-
-        Display.x = x;
-        Display.y = y;
         glfwSetWindowPos(Window.handle, x, y);
     }
 
@@ -1047,5 +1061,55 @@ public class Display {
      */
     public static long getWindow() {
         return Window.handle;
+    }
+
+    /**
+     * Sets the display to fullscreen exclusive mode.
+     */
+    private static void _setFullscreenExclusive() {
+        long currentMonitor = _getCurrentMonitor();
+        GLFWVidMode vidMode = Objects.requireNonNull(glfwGetVideoMode(currentMonitor), "Primary monitor video mode is null.");
+        glfwSetWindowMonitor(Window.handle, currentMonitor, 0, 0, vidMode.width(), vidMode.height(), vidMode.refreshRate());
+    }
+
+    /**
+     * Sets the display to fullscreen borderless mode.
+     */
+    private static void _setFullscreenBorderless() {
+        long currentMonitor = _getCurrentMonitor();
+        GLFWVidMode vidMode = Objects.requireNonNull(glfwGetVideoMode(currentMonitor), "Primary monitor video mode is null.");
+        glfwSetWindowAttrib(Window.handle, GLFW_DECORATED, GLFW_FALSE);
+        glfwSetWindowMonitor(Window.handle, currentMonitor, 0, 0, vidMode.width(), GL_FULLSCREEN_BORDERLESS_WINDOWS_FIX ? vidMode.height() + 1 : vidMode.height(), vidMode.refreshRate());
+    }
+
+    /**
+     * Finds the current monitor based on position.
+     */
+    private static long _getCurrentMonitor() {
+        PointerBuffer monitors = Objects.requireNonNull(glfwGetMonitors(), "No monitors found.");
+        if (monitors.limit() == 0) {
+            LWJGLUtil.log("No monitors found.");
+            return glfwGetPrimaryMonitor();
+        }
+
+        for (int i = 0; i < monitors.limit(); i++) {
+            long monitor = monitors.get(i);
+
+            int[] monX = new int[1],
+                    monY = new int[1];
+            glfwGetMonitorPos(monitor, monX, monY);
+
+            GLFWVidMode mode = Objects.requireNonNull(glfwGetVideoMode(monitor), "Monitor video mode is null.");
+            int width = mode.width(),
+                    height = mode.height();
+
+            if (displayX >= monX[0] && displayX < monX[0] + width &&
+                    displayY >= monY[0] && displayY < monY[0] + height) {
+                return monitor;
+            }
+        }
+
+        LWJGLUtil.log("No monitors found.");
+        return glfwGetPrimaryMonitor();
     }
 }

@@ -1,5 +1,6 @@
 package org.lwjgl;
 
+import me.darragh.lwjgl.Config;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.Display;
@@ -8,6 +9,7 @@ import org.lwjgl.system.Platform;
 import javax.swing.*;
 import java.awt.*;
 import java.net.URI;
+import java.util.Objects;
 
 import static org.lwjgl.glfw.GLFW.glfwInit;
 
@@ -23,7 +25,18 @@ public class Sys {
     private static final double NANO_TIMER_RESOLUTION = 1000.0D * 1000.0D * 1000.0D;
 
     static {
-        if (!glfwInit()) throw new IllegalStateException("Unable to initialize glfw");
+        // Assert platform Wayland desktops (Linux/FreeBSD only)
+        // It's unrealistic to expect Wayland to be used on Windows or macOS, so we can exclude them from this check.
+        if ((Platform.get().equals(Platform.LINUX) || Platform.get().equals(Platform.FREEBSD)) && Objects.requireNonNullElse(
+                System.getenv("XDG_SESSION_TYPE"),""
+        ).toLowerCase().startsWith("wayland")) { // Identify if the current session is using Wayland
+            // Typically $XDG_SESSION_TYPE is set to either "x11" or "wayland"
+            GLFW.glfwInitHint(GLFW.GLFW_PLATFORM, Config.GLFW_FORCE_WAYLAND ? GLFW.GLFW_PLATFORM_WAYLAND : GLFW.GLFW_PLATFORM_X11);
+        }
+
+        if (!glfwInit()) {
+            throw new IllegalStateException("Unable to initialise glfw");
+        }
     }
 
     /**
