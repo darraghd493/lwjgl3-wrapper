@@ -16,6 +16,10 @@ public class Config { // TODO: Serialisation
     public static int GL_VERSION_MAJOR = 2;
     public static int GL_VERSION_MINOR = 1;
 
+    public static boolean AL_CUSTOM_MAX_AUX_FX = false;
+    public static int AL_CUSTOM_MAX_AUX_FX_VALUE = 8;
+    public static boolean AL_HRTF = true;
+
     // Cocoa compositor
     public static String COCOA_FRAME_NAME = "Minecraft";
     public static boolean COCOA_RETINA_FRAME_BUFFER = false;

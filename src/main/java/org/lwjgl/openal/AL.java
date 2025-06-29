@@ -1,6 +1,7 @@
 package org.lwjgl.openal;
 
 import lombok.Getter;
+import me.darragh.lwjgl.Config;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLUtil;
@@ -9,9 +10,7 @@ import org.lwjgl.system.*;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.function.IntFunction;
 
 import static org.lwjgl.openal.AL10.*;
@@ -321,14 +320,29 @@ public class AL {
      * @return The attribute list.
      */
     private static IntBuffer createAttributeList(int contextFrequency, int contextRefresh, int contextSynchronized, MemoryStack stack) {
-        IntBuffer buffer = stack.callocInt(7);
-        buffer.put(0, ALC_FREQUENCY);
-        buffer.put(1, contextFrequency);
-        buffer.put(2, ALC_REFRESH);
-        buffer.put(3, contextRefresh);
-        buffer.put(4, ALC_SYNC);
-        buffer.put(5, contextSynchronized);
-        buffer.put(6, 0);
+        List<Integer> attributes = new ArrayList<>(
+                List.of(
+                        ALC_FREQUENCY, contextFrequency,
+                        ALC_REFRESH, contextRefresh,
+                        ALC_SYNC, contextSynchronized
+                )
+        );
+        if (Config.AL_CUSTOM_MAX_AUX_FX) {
+            attributes.add(EXTEfx.ALC_MAX_AUXILIARY_SENDS);
+            attributes.add(Config.AL_CUSTOM_MAX_AUX_FX_VALUE);
+        }
+        if (Config.AL_HRTF) {
+            attributes.add(SOFTHRTF.ALC_HRTF_SOFT);
+            attributes.add(ALC10.ALC_FALSE);
+            attributes.add(SOFTHRTF.ALC_HRTF_ID_SOFT);
+            attributes.add(0);
+        }
+        IntBuffer buffer = stack.callocInt(attributes.size() + 1);
+        for (int val : attributes) {
+            buffer.put(val);
+        }
+        buffer.put(0); // end marker
+        buffer.flip();
         return buffer;
     }
 
