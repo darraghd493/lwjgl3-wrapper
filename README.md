@@ -1,6 +1,6 @@
 # lwjgl3-wrapper
 
-This is a basic and heavily stripped drop-in replacement LWJGL 2.9.4 (nightly-20150209) -> LWJGL 3.3.4 wrapper for MCP919.
+This is a basic and heavily stripped drop-in replacement LWJGL 2.9.4 (nightly-20150209) -> LWJGL 3.3.x wrapper for MCP919.
 
 It does not maintain the same code practices as the original LWJGL 2.9.4, and is not intended for use outside MCP919.
 
