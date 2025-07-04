@@ -451,14 +451,22 @@ public class Display {
             throw new IllegalStateException("Display not created.");
         }
 
+        if (Window.handle == NULL) {
+            LWJGLUtil.log("Display.destroy() called but the display window is already destroyed.");
+            return;
+        }
+
         Window.releaseCallbacks();
-        glfwDestroyWindow(Window.handle);
+
+        if (Window.handle != NULL) {
+            glfwDestroyWindow(Window.handle);
+            Window.handle = NULL;
+        }
+
         if (terminate) {
             terminate();
         }
 
-        // Reset the Display state
-        Window.handle = NULL;
         displayCreated = false;
     }
 
