@@ -4,6 +4,8 @@ This is a basic and heavily stripped drop-in replacement LWJGL 2.9.4 (nightly-20
 
 It does not maintain the same code practices as the original LWJGL 2.9.4, and is not intended for use outside MCP919.
 
+It is currently unstable and has poor quality code. I am planning to improve this over time.
+
 ## Installation
 
 ### Gradle
