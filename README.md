@@ -25,7 +25,7 @@ dependencies {
 
 _This project is also available via. Jitpack. View more information [here](https://jitpack.io/#Fentanyl-Client/lwjgl3-wrapper)._
 
-## Usage:
+## Usage
 
 1. Add the matching LWJGL version to your project
 2. Add the `lwjgl3-wrapper` dependency to your project
@@ -34,3 +34,7 @@ _This project is also available via. Jitpack. View more information [here](https
     - In MCP919, this is pretty easy but takes about 5 - 10 minutes
     - Make sure to include paulscode sound library - I've posted updated classes for it [here](https://gist.github.com/darraghd493/a1b59d98ee790eea97d4a5fcbcca8332)
 4. Done!
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
