@@ -1,5 +1,6 @@
 package org.lwjgl.opengl;
 
+import lombok.var;
 import me.darragh.lwjgl.opengl.Capability;
 
 import java.lang.reflect.Field;

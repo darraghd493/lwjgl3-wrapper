@@ -200,13 +200,7 @@ public class Display {
                         Keyboard.addKeyEvent(window, key, scancode, action, mods, '\0');
                     }
                 } else { // Other key with no char event associated
-                    char mappedChar = switch (key) {
-                        case GLFW_KEY_ENTER -> 0x0D;
-                        case GLFW_KEY_ESCAPE -> 0x1B;
-                        case GLFW_KEY_TAB -> 0x09;
-                        case GLFW_KEY_BACKSPACE -> 0x08;
-                        default -> '\0';
-                    };
+                    char mappedChar = getMappedKeyChar(key);
                     Keyboard.addKeyEvent(window, key, scancode, action, mods, mappedChar);
                 }
             }
@@ -1119,5 +1113,15 @@ public class Display {
 
         LWJGLUtil.log("No monitors found.");
         return glfwGetPrimaryMonitor();
+    }
+
+    private static char getMappedKeyChar(int key) {
+        switch (key) {
+            case GLFW_KEY_ENTER: return 0x0D;
+            case GLFW_KEY_ESCAPE: return 0x1B;
+            case GLFW_KEY_TAB: return 0x09;
+            case GLFW_KEY_BACKSPACE: return 0x08;
+            default: return '\0';
+        }
     }
 }

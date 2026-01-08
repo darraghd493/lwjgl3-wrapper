@@ -10,7 +10,7 @@ val lwjglNatives: String by project
 
 // Toolchains:
 java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+    toolchain.languageVersion.set(JavaLanguageVersion.of(8))
 }
 
 // Dependencies:
@@ -26,24 +26,20 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
 
     // JSpecify
-    implementation("org.jspecify:jspecify:1.0.0")
+    compileOnly("org.jspecify:jspecify:1.0.0")
 
     // LWJGL
-    implementation(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
-    implementation("org.lwjgl", "lwjgl")
-    implementation("org.lwjgl", "lwjgl-glfw")
-    implementation("org.lwjgl", "lwjgl-openal")
-    implementation("org.lwjgl", "lwjgl-opengl")
-    runtimeOnly("org.lwjgl", "lwjgl", classifier = lwjglNatives)
-    runtimeOnly("org.lwjgl", "lwjgl-glfw", classifier = lwjglNatives)
-    runtimeOnly("org.lwjgl", "lwjgl-openal", classifier = lwjglNatives)
-    runtimeOnly("org.lwjgl", "lwjgl-opengl", classifier = lwjglNatives)
+    compileOnly(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
+    compileOnly("org.lwjgl", "lwjgl")
+    compileOnly("org.lwjgl", "lwjgl-glfw")
+    compileOnly("org.lwjgl", "lwjgl-openal")
+    compileOnly("org.lwjgl", "lwjgl-opengl")
 
     // JInput
-    implementation("net.java.jinput:jinput:2.0.10")
+    compileOnly("net.java.jinput:jinput:2.0.5")
 
     // Commons
-    implementation("org.apache.commons:commons-lang3:3.17.0")
+    compileOnly("org.apache.commons:commons-lang3:3.17.0")
 }
 
 // Tasks:
@@ -73,7 +69,7 @@ publishing {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
             groupId = "me.darragh"
-            artifactId = "lwjgl3-wrapper"
+            artifactId = "lwjgl3-wrapper-java8"
             version = project.version.toString()
 
             pom {
@@ -81,7 +77,7 @@ publishing {
                 description.set("An experimental lwjgl3 wrapper")
                 url.set("https://github.com/darraghd493/lwjgl3-wrapper")
                 properties.set(mapOf(
-                    "java.version" to "17",
+                    "java.version" to "8",
                     "project.build.sourceEncoding" to "UTF-8",
                     "project.reporting.outputEncoding" to "UTF-8"
                 ))

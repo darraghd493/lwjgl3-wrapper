@@ -1,5 +1,6 @@
 package org.lwjgl.input;
 
+import lombok.var;
 import me.darragh.lwjgl.opengl.input.keyboard.KeyCodeUtil;
 import me.darragh.lwjgl.opengl.input.keyboard.KeyEvent;
 import me.darragh.lwjgl.opengl.input.keyboard.KeyCode;

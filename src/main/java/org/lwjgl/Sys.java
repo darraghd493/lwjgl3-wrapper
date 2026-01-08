@@ -27,7 +27,7 @@ public class Sys {
     static {
         // Assert platform Wayland desktops (Linux/FreeBSD only)
         // It's unrealistic to expect Wayland to be used on Windows or macOS, so we can exclude them from this check.
-        if ((Platform.get().equals(Platform.LINUX) || Platform.get().equals(Platform.FREEBSD)) && Objects.requireNonNullElse(
+        if ((Platform.get().equals(Platform.LINUX) || Platform.get().equals(Platform.FREEBSD)) && requireNonNullElse(
                 System.getenv("XDG_SESSION_TYPE"),""
         ).toLowerCase().startsWith("wayland")) { // Identify if the current session is using Wayland
             // Typically $XDG_SESSION_TYPE is set to either "x11" or "wayland"
@@ -130,5 +130,9 @@ public class Sys {
         } catch (Exception e) {
             throw new RuntimeException("Failed to open URL", e);
         }
+    }
+
+    private static <T> T requireNonNullElse(@Nullable T obj, T defaultObj) {
+        return (obj != null) ? obj : Objects.requireNonNull(defaultObj);
     }
 }

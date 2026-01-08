@@ -182,12 +182,9 @@ public class AL {
 
     private static ALCapabilities checkCapabilities(@Nullable ALCapabilities caps) {
         if (caps == null) {
-            throw new IllegalStateException(
-                    """
-                            No ALCapabilities instance set for the current thread or process. Possible solutions:
-                            \ta) Call AL.createCapabilities() after making a context current.
-                            \tb) Call AL.setCurrentProcess() or AL.setCurrentThread() if an ALCapabilities instance already exists."""
-            );
+            throw new IllegalStateException("No ALCapabilities instance set for the current thread or process. Possible solutions:\n" +
+                    "\ta) Call AL.createCapabilities() after making a context current.\n" +
+                    "\tb) Call AL.setCurrentProcess() or AL.setCurrentThread() if an ALCapabilities instance already exists.");
         }
         return caps;
     }
@@ -320,13 +317,11 @@ public class AL {
      * @return The attribute list.
      */
     private static IntBuffer createAttributeList(int contextFrequency, int contextRefresh, int contextSynchronized, MemoryStack stack) {
-        List<Integer> attributes = new ArrayList<>(
-                List.of(
-                        ALC_FREQUENCY, contextFrequency,
-                        ALC_REFRESH, contextRefresh,
-                        ALC_SYNC, contextSynchronized
-                )
-        );
+        List<Integer> attributes = new ArrayList<>(Arrays.asList(
+                ALC_FREQUENCY, contextFrequency,
+                ALC_REFRESH, contextRefresh,
+                ALC_SYNC, contextSynchronized
+        ));
         if (Config.AL_CUSTOM_MAX_AUX_FX) {
             attributes.add(EXTEfx.ALC_MAX_AUXILIARY_SENDS);
             attributes.add(Config.AL_CUSTOM_MAX_AUX_FX_VALUE);

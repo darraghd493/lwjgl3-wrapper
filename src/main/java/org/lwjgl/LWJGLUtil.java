@@ -105,12 +105,12 @@ public class LWJGLUtil {
      * @return The platform name.
      */
     public static String getPlatformName() {
-        return switch (PLATFORM) {
-            case 1 -> PLATFORM_LINUX_NAME;
-            case 2 -> PLATFORM_MACOSX_NAME;
-            case 3 -> PLATFORM_WINDOWS_NAME;
-            default -> throw new IllegalStateException("Unexpected value: " + PLATFORM);
-        };
+        switch (PLATFORM) {
+            case 1: return PLATFORM_LINUX_NAME;
+            case 2: return PLATFORM_MACOSX_NAME;
+            case 3: return PLATFORM_WINDOWS_NAME;
+            default: throw new IllegalStateException("Unexpected value: " + PLATFORM);
+        }
     }
 
     /**
