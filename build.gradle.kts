@@ -29,11 +29,15 @@ dependencies {
     compileOnly("org.jspecify:jspecify:1.0.0")
 
     // LWJGL
-    compileOnly(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
-    compileOnly("org.lwjgl", "lwjgl")
-    compileOnly("org.lwjgl", "lwjgl-glfw")
-    compileOnly("org.lwjgl", "lwjgl-openal")
-    compileOnly("org.lwjgl", "lwjgl-opengl")
+    implementation(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
+    implementation("org.lwjgl", "lwjgl")
+    implementation("org.lwjgl", "lwjgl-glfw")
+    implementation("org.lwjgl", "lwjgl-openal")
+    implementation("org.lwjgl", "lwjgl-opengl")
+    runtimeOnly("org.lwjgl", "lwjgl", classifier = lwjglNatives)
+    runtimeOnly("org.lwjgl", "lwjgl-glfw", classifier = lwjglNatives)
+    runtimeOnly("org.lwjgl", "lwjgl-openal", classifier = lwjglNatives)
+    runtimeOnly("org.lwjgl", "lwjgl-opengl", classifier = lwjglNatives)
 
     // JInput
     compileOnly("net.java.jinput:jinput:2.0.5")
