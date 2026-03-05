@@ -337,14 +337,18 @@ public class Display {
             setFullscreen(true);
         }
 
+        // Poll events early
+        glfwPollEvents();
+
         // Trigger early callbacks to get a more accurate initial state
-        int[] ww = new int[1],
-                wh = new int[1];
+        int[] ww = new int[1], wh = new int[1];
+        int[] fw = new int[1], fh = new int[1];
 
         glfwGetWindowSize(Window.handle, ww, wh);
-        glfwGetFramebufferSize(Window.handle, ww, wh);
+        glfwGetFramebufferSize(Window.handle, fw, fh);
+
         Window.windowSizeCallback.invoke(Window.handle, ww[0], wh[0]);
-        Window.framebufferSizeCallback.invoke(Window.handle, ww[0], wh[0]);
+        Window.framebufferSizeCallback.invoke(Window.handle, fw[0], fh[0]);
     }
 
     /**
