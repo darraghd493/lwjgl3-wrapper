@@ -64,6 +64,9 @@ public class Display {
     @Nullable
     private static Drawable drawable = null;
 
+    @Nullable
+    private static GLCapabilities glCapabilities = null;
+
     @SuppressWarnings("DataFlowIssue")
     @Nullable
     private static ByteBuffer[] icons = null;
@@ -146,8 +149,12 @@ public class Display {
         // Prepare window hints
         glfwDefaultWindowHints();
 
-        if (GL_CONTEXT_BACKWARD_COMPATIBLE) {
+        if (LWJGLUtil.getPlatform() == 2 && (GL_VERSION_MAJOR > 3 || (GL_VERSION_MAJOR == 3 && GL_VERSION_MINOR >= 2))) { // special macOS condition for core profile
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        } else if (GL_CONTEXT_BACKWARD_COMPATIBLE) {
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         }
 
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
@@ -170,6 +177,14 @@ public class Display {
 
         // -> Wayland compositor
         glfwWindowHintString(GLFW_WAYLAND_APP_ID, Config.WAYLAND_APP_ID);
+
+        // Handle errors
+        glfwSetErrorCallback(Window.errorCallback); // temporary
+        Window.handle = glfwCreateWindow(displayMode.getWidth(), displayMode.getHeight(), title, NULL, NULL);
+
+        if (Window.handle == NULL) {
+            throw new IllegalStateException("Failed to create Display window");
+        }
 
         // Create window
         Window.handle = glfwCreateWindow(displayMode.getWidth(), displayMode.getHeight(), title, NULL, NULL);
@@ -331,7 +346,7 @@ public class Display {
 
         glfwMakeContextCurrent(Window.handle);
         drawable = new DrawableGL();
-        GL.createCapabilities();
+        glCapabilities = GL.createCapabilities();
 
         glfwSwapInterval(1);
         displayCreated = true;
@@ -631,6 +646,11 @@ public class Display {
      */
     public static void makeCurrent() {
         glfwMakeContextCurrent(Window.handle);
+        if (glCapabilities != null) {
+            GL.setCapabilities(glCapabilities);
+        } else {
+            glCapabilities = GL.createCapabilities();
+        }
     }
 
     /**
@@ -661,6 +681,7 @@ public class Display {
      */
     public static void releaseContext() {
         glfwMakeContextCurrent(NULL);
+        GL.setCapabilities(null);
     }
 
     /**
@@ -865,6 +886,10 @@ public class Display {
         if (!isCreated()) {
             return;
         }
+        if (!isCurrent()) {
+            LWJGLUtil.log("Display.swapBuffers() called but the display context is not current. Making context current before swapping buffers.");
+            makeCurrent();
+        }
         glfwSwapBuffers(Window.handle);
     }
 
@@ -898,6 +923,10 @@ public class Display {
     public static void update(boolean processMessages) {
         if (!isCreated()) {
             return;
+        }
+        if (!isCurrent()) {
+            LWJGLUtil.log("Display.swapBuffers() called but the display context is not current. Making context current before swapping buffers.");
+            makeCurrent();
         }
         swapBuffers();
         displayDirty = false;
