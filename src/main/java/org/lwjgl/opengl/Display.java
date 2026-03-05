@@ -178,15 +178,8 @@ public class Display {
         // -> Wayland compositor
         glfwWindowHintString(GLFW_WAYLAND_APP_ID, Config.WAYLAND_APP_ID);
 
-        // Handle errors
-        glfwSetErrorCallback(Window.errorCallback); // temporary
-        Window.handle = glfwCreateWindow(displayMode.getWidth(), displayMode.getHeight(), title, NULL, NULL);
-
-        if (Window.handle == NULL) {
-            throw new IllegalStateException("Failed to create Display window");
-        }
-
         // Create window
+        glfwSetErrorCallback(Window.errorCallback); // temporary
         Window.handle = glfwCreateWindow(displayMode.getWidth(), displayMode.getHeight(), title, NULL, NULL);
         if (Window.handle == NULL) {
             throw new IllegalStateException("Failed to create Display window");
@@ -311,20 +304,6 @@ public class Display {
             public void invoke(long window, int width, int height) {
                 displayFramebufferWidth = width;
                 displayFramebufferHeight = height;
-            }
-        };
-
-        Window.cursorPosCallback = new GLFWCursorPosCallback() {
-            @Override
-            public void invoke(long window, double xpos, double ypos) {
-                Mouse.addMoveEvent(xpos, ypos);
-            }
-        };
-
-        Window.mouseButtonCallback = new GLFWMouseButtonCallback() {
-            @Override
-            public void invoke(long window, int button, int action, int mods) {
-                Mouse.addButtonEvent(button, action == GLFW_PRESS);
             }
         };
 
@@ -932,6 +911,11 @@ public class Display {
         displayDirty = false;
         if (processMessages) {
             processMessages();
+        }
+
+        int error = GL11.glGetError();
+        if (error != GL11.GL_NO_ERROR) {
+            throw new IllegalStateException("OpenGL error occurred: " + error);
         }
     }
 
