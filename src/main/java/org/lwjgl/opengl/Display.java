@@ -64,6 +64,9 @@ public class Display {
     @Nullable
     private static Drawable drawable = null;
 
+    @Nullable
+    private static GLCapabilities glCapabilities = null;
+
     @SuppressWarnings("DataFlowIssue")
     @Nullable
     private static ByteBuffer[] icons = null;
@@ -293,20 +296,6 @@ public class Display {
             }
         };
 
-        Window.cursorPosCallback = new GLFWCursorPosCallback() {
-            @Override
-            public void invoke(long window, double xpos, double ypos) {
-                Mouse.addMoveEvent(xpos, ypos);
-            }
-        };
-
-        Window.mouseButtonCallback = new GLFWMouseButtonCallback() {
-            @Override
-            public void invoke(long window, int button, int action, int mods) {
-                Mouse.addButtonEvent(button, action == GLFW_PRESS);
-            }
-        };
-
         Window.setCallbacks();
 
         // Update display state
@@ -325,7 +314,7 @@ public class Display {
 
         glfwMakeContextCurrent(Window.handle);
         drawable = new DrawableGL();
-        GL.createCapabilities();
+        glCapabilities = GL.createCapabilities();
 
         glfwSwapInterval(1);
         displayCreated = true;
@@ -337,14 +326,18 @@ public class Display {
             setFullscreen(true);
         }
 
+        // Poll events early
+        glfwPollEvents();
+
         // Trigger early callbacks to get a more accurate initial state
-        int[] ww = new int[1],
-                wh = new int[1];
+        int[] ww = new int[1], wh = new int[1];
+        int[] fw = new int[1], fh = new int[1];
 
         glfwGetWindowSize(Window.handle, ww, wh);
-        glfwGetFramebufferSize(Window.handle, ww, wh);
+        glfwGetFramebufferSize(Window.handle, fw, fh);
+
         Window.windowSizeCallback.invoke(Window.handle, ww[0], wh[0]);
-        Window.framebufferSizeCallback.invoke(Window.handle, ww[0], wh[0]);
+        Window.framebufferSizeCallback.invoke(Window.handle, fw[0], fh[0]);
     }
 
     /**
@@ -625,6 +618,11 @@ public class Display {
      */
     public static void makeCurrent() {
         glfwMakeContextCurrent(Window.handle);
+        if (glCapabilities != null) {
+            GL.setCapabilities(glCapabilities);
+        } else {
+            glCapabilities = GL.createCapabilities();
+        }
     }
 
     /**
@@ -655,6 +653,7 @@ public class Display {
      */
     public static void releaseContext() {
         glfwMakeContextCurrent(NULL);
+        GL.setCapabilities(null);
     }
 
     /**
@@ -858,6 +857,10 @@ public class Display {
     public static void swapBuffers() {
         if (!isCreated()) {
             return;
+        }
+        if (!isCurrent()) {
+            LWJGLUtil.log("Display.swapBuffers() called but the display context is not current. Making context current before swapping buffers.");
+            makeCurrent();
         }
         glfwSwapBuffers(Window.handle);
     }
