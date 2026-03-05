@@ -907,10 +907,6 @@ public class Display {
         if (!isCreated()) {
             return;
         }
-        if (!isCurrent()) {
-            LWJGLUtil.log("Display.swapBuffers() called but the display context is not current. Making context current before swapping buffers.");
-            makeCurrent();
-        }
         swapBuffers();
         displayDirty = false;
         if (processMessages) {
